@@ -116,20 +116,29 @@
   margin-bottom: 20px;
   padding-bottom: 18px;
   border-bottom: 1px solid #ddd;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 /* Image row scales to however many images the article has:
-   1 image = full width, 2 = side-by-side, 3 = three across, etc. */
+   1 image = full width, 2 = side-by-side, 3 = three across, etc.
+   Grid (not flex) is used here because flex items can miscalculate
+   and overflow their box inside a CSS multi-column (.columns) parent. */
 .col-article-images {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(var(--img-count, 1), 1fr);
   gap: 6px;
   margin-bottom: 12px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .col-article-images img {
-  flex: 1 1 0;
-  width: 0; /* let flex-basis drive the width so all images stay equal */
-  aspect-ratio: 1 / 0.8;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  height: 130px;
   object-fit: contain;
   border-radius: 6px;
   background: #e3e8ee;
@@ -228,17 +237,8 @@
    RESPONSIVE FIXES
 ------------------------------------- */
 @media (max-width: 992px) {
-  .columns {
-    column-count: 2;
-  }
-
-  .lead-story {
-    flex-direction: column;
-  }
-
-  .lead-story-img {
-    max-width: 100%;
-    flex-basis: auto;
+  .viewer {
+    padding: 15px;
   }
 }
 
@@ -247,12 +247,25 @@
     font-size: 22px;
   }
 
-  .lead-story-body h2 {
-    font-size: 24px;
-  }
-
   .viewer {
     padding: 15px;
+  }
+
+  .columns {
+    column-gap: 16px;
+  }
+
+  .col-article-images img {
+    height: 90px;
+  }
+
+  .col-article h3 {
+    font-size: 15px;
+  }
+
+  .col-article p {
+    font-size: 11.5px;
+    line-height: 1.4;
   }
 }
 
@@ -262,7 +275,20 @@
   }
 
   .columns {
-    column-count: 1;
+    column-gap: 10px;
+  }
+
+  .col-article-images img {
+    height: 70px;
+  }
+
+  .col-article h3 {
+    font-size: 13px;
+  }
+
+  .col-article p {
+    font-size: 10.5px;
+    line-height: 1.35;
   }
 
   .nav-link {
