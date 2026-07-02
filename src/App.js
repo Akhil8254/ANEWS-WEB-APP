@@ -36,7 +36,7 @@ function AdminLogin() {
     if (error) {
       setError(error.message);
     }
-    // ✅ NO manual state change here (FIX 2)
+    // No manual state change here — onAuthStateChange listener handles it
   };
 
   return (
@@ -66,29 +66,26 @@ function AdminLogin() {
 /* ================= ADMIN PANEL ================= */
 function AdminPanel({ pages, reloadPages, onClose }) {
   const [newTitle, setNewTitle] = useState("");
- const [selectedPage, setSelectedPage] = useState("");
+  const [selectedPage, setSelectedPage] = useState("");
 
-  const [article, setArticle] = useState({ img: "", title: "", text: "" });
-
-
+  const [article, setArticle] = useState({ images: [], title: "", text: "" });
+  const [uploading, setUploading] = useState(false);
 
   const addLayout = async () => {
-  if (!newTitle) return;
+    if (!newTitle) return;
 
-  const { error } = await supabase
-    .from("layouts")
-    .insert([{ title: newTitle }]);
+    const { error } = await supabase
+      .from("layouts")
+      .insert([{ title: newTitle }]);
 
-  if (error) {
-    alert("Add layout failed: " + error.message);
-    return;
-  }
+    if (error) {
+      alert("Add layout failed: " + error.message);
+      return;
+    }
 
-  setNewTitle("");
-  await reloadPages();
-
-};
-
+    setNewTitle("");
+    await reloadPages();
+  };
 
   const deleteLayout = async (id) => {
     if (!window.confirm("Delete this layout?")) return;
@@ -103,32 +100,34 @@ function AdminPanel({ pages, reloadPages, onClose }) {
     reloadPages();
   };
 
- const addArticle = async () => {
-  if (!selectedPage) {
-    alert("Please select a layout first");
-    return;
-  }
+  const addArticle = async () => {
+    if (!selectedPage) {
+      alert("Please select a layout first");
+      return;
+    }
 
-  if (!article.title || !article.text || !article.img) return;
+    if (!article.title || !article.text || article.images.length === 0) return;
 
-  const { error } = await supabase.from("articles").insert([
-    {
-      layout_id: Number(selectedPage), // ✅ FORCE NUMBER
-      title: article.title,
-      text: article.text,
-      img: article.img,
-    },
-  ]);
+    // "img" kept in sync with the first image for backward compatibility
+    // with any code/rows that still only read the single-image column.
+    const { error } = await supabase.from("articles").insert([
+      {
+        layout_id: Number(selectedPage),
+        title: article.title,
+        text: article.text,
+        img: article.images[0],
+        images: article.images,
+      },
+    ]);
 
-  if (error) {
-    alert(error.message);
-    return;
-  }
+    if (error) {
+      alert(error.message);
+      return;
+    }
 
-  setArticle({ img: "", title: "", text: "" });
-  await reloadPages();
-};
-
+    setArticle({ images: [], title: "", text: "" });
+    await reloadPages();
+  };
 
   const deleteArticle = async (id) => {
     const { error } = await supabase.from("articles").delete().eq("id", id);
@@ -139,6 +138,29 @@ function AdminPanel({ pages, reloadPages, onClose }) {
     }
 
     reloadPages();
+  };
+
+  const handleImageFiles = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    setUploading(true);
+    try {
+      const urls = await Promise.all(files.map(uploadImageToStorage));
+      setArticle((prev) => ({ ...prev, images: [...prev.images, ...urls] }));
+    } catch (err) {
+      alert("Image upload failed: " + err.message);
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const removeImage = (index) => {
+    setArticle((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index),
+    }));
   };
 
   return (
@@ -175,33 +197,38 @@ function AdminPanel({ pages, reloadPages, onClose }) {
       <hr />
 
       <select
-   value={selectedPage}
-  onChange={(e) => setSelectedPage(e.target.value)}
->
-  <option value="" >
-    Select layout
-  </option>
+        value={selectedPage}
+        onChange={(e) => setSelectedPage(e.target.value)}
+      >
+        <option value="">Select layout</option>
 
-  {pages.map((p) => (
-    <option key={p.id} value={p.id.toString()}>
-      {p.title}
-    </option>
-  ))}
-</select>
-
+        {pages.map((p) => (
+          <option key={p.id} value={p.id.toString()}>
+            {p.title}
+          </option>
+        ))}
+      </select>
 
       <input
         type="file"
         accept="image/*"
-        onChange={async (e) => {
-          const file = e.target.files[0];
-          if (!file) return;
-          const url = await uploadImageToStorage(file);
-          setArticle({ ...article, img: url });
-        }}
+        multiple
+        onChange={handleImageFiles}
       />
+      {uploading && <p>Uploading…</p>}
 
-      {article.img && <img src={article.img} alt="" width={120} />}
+      {article.images.length > 0 && (
+        <div className="image-preview-row">
+          {article.images.map((url, i) => (
+            <div key={url + i} className="image-preview-item">
+              <img src={url} alt="" width={90} />
+              <button type="button" onClick={() => removeImage(i)}>
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       <input
         placeholder="Article Title"
@@ -218,14 +245,58 @@ function AdminPanel({ pages, reloadPages, onClose }) {
       <button onClick={addArticle}>➕ Add Article</button>
 
       {pages
-  .find((p) => p.id === Number(selectedPage))
-  ?.articles?.map((a) => (
-    <div key={a.id} className="delete-row">
-      {a.title}
-      <button onClick={() => deleteArticle(a.id)}>🗑</button>
+        .find((p) => p.id === Number(selectedPage))
+        ?.articles?.map((a) => (
+          <div key={a.id} className="delete-row">
+            {a.title}
+            <button onClick={() => deleteArticle(a.id)}>🗑</button>
+          </div>
+        ))}
     </div>
-))}
+  );
+}
 
+/* ================= HELPERS ================= */
+// Old rows only ever had a single "img" column. Newer rows may have
+// an "images" array. This keeps both kinds of articles rendering.
+const getImagesToShow = (article) => {
+  if (Array.isArray(article.images) && article.images.length > 0) {
+    return article.images;
+  }
+  return article.img ? [article.img] : [];
+};
+
+/* ================= NEWSPAPER COLUMNS VIEW ================= */
+function NewspaperColumns({ articles }) {
+  const sorted = [...articles].sort(
+    (a, b) => new Date(b.created_at) - new Date(a.created_at)
+  );
+
+  if (sorted.length === 0) return null;
+
+  return (
+    <div className="newspaper">
+      <div className="columns">
+        {sorted.map((a) => {
+          const imagesToShow = getImagesToShow(a);
+          return (
+            <div key={a.id} className="col-article">
+              {imagesToShow.length > 0 && (
+                <div
+                  className="col-article-images"
+                  style={{ "--img-count": imagesToShow.length }}
+                >
+                  {imagesToShow.map((url, i) => (
+                    <img key={url + i} src={url} alt={a.title} />
+                  ))}
+                </div>
+              )}
+              <h3>{a.title}</h3>
+              <p>{a.text}</p>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -238,36 +309,39 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const loadPages = useCallback(async () => {
-  const { data, error } = await supabase
-    .from("layouts")
-    .select(`id, title, articles (id, title, text, img, created_at)`)
-    .order("id", { ascending: true });
+    const { data, error } = await supabase
+      .from("layouts")
+      .select(`id, title, articles (id, title, text, img, images, created_at)`)
+      .order("id", { ascending: true });
 
-  if (error) {
-    console.error(error);
-    return;
-  }
+    if (error) {
+      console.error(error);
+      return;
+    }
 
-  const normalized = (data || []).map((p) => ({
-    ...p,
-    articles: p.articles || [], // ✅ IMPORTANT
-  }));
+    const normalized = (data || []).map((p) => ({
+      ...p,
+      articles: p.articles || [],
+    }));
 
-  setPages(normalized);
-}, []);
-
+    setPages(normalized);
+  }, []);
 
   useEffect(() => {
     loadPages();
   }, [loadPages]);
 
-  /* ================= SESSION CONFIRMATION (FIX 3) ================= */
+  /* ================= SESSION TRACKING (FIXED) =================
+     Only track whether a session exists. Do NOT force the admin
+     panel open just because a session is present — that was
+     exposing /admin to anyone opening the site in a browser
+     where an admin had previously logged in. Visibility of the
+     admin panel is controlled solely by the secret hash route
+     below.
+  =============================================================== */
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setIsLoggedIn(true);
-        setShowAdmin(true);
-      }
+      setIsLoggedIn(!!session);
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange(
@@ -278,7 +352,6 @@ export default function App() {
 
     return () => listener.subscription.unsubscribe();
   }, []);
-  /* =============================================================== */
 
   useEffect(() => {
     if (window.location.hash === "#/ANEWS-x9Qm25-SEC-admin") {
@@ -307,18 +380,16 @@ export default function App() {
       </nav>
 
       <main className="viewer-area">
-       {showAdmin && isLoggedIn ? (
- <AdminPanel
-  pages={pages}
-  reloadPages={loadPages}
-  onClose={() => {
-    setShowAdmin(false);
-    setIsLoggedIn(false);
-    window.location.hash = "";
-  }}
-/>
-
-
+        {showAdmin && isLoggedIn ? (
+          <AdminPanel
+            pages={pages}
+            reloadPages={loadPages}
+            onClose={() => {
+              setShowAdmin(false);
+              setIsLoggedIn(false);
+              window.location.hash = "";
+            }}
+          />
         ) : showAdmin ? (
           <AdminLogin />
         ) : (
@@ -338,30 +409,15 @@ export default function App() {
                 </p>
 
                 <button
-                  onClick={() =>
-                    setCurrent((c) => (c + 1) % pages.length)
-                  }
+                  onClick={() => setCurrent((c) => (c + 1) % pages.length)}
                 >
                   Next ▶
                 </button>
               </div>
 
-              <h2>{currentPage.title}</h2>
+              <h2 className="page-heading">{currentPage.title}</h2>
 
-              <div className="page-grid">
-                {[...(currentPage.articles || [])]
-                  .sort(
-                    (a, b) =>
-                      new Date(b.created_at) - new Date(a.created_at)
-                  )
-                  .map((a) => (
-                    <div key={a.id} className="article-box">
-                      <img src={a.img} alt={a.title} />
-                      <h3>{a.title}</h3>
-                      <p>{a.text}</p>
-                    </div>
-                  ))}
-              </div>
+              <NewspaperColumns articles={currentPage.articles || []} />
             </section>
           )
         )}

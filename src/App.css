@@ -81,55 +81,74 @@
   border-radius: 10px;
   padding: 20px;
   width: 100%;
-  max-width: 1900px; /* b0dy size */
+  max-width: 1900px; /* overall body width */
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
 }
 
 .page-heading {
-  font-size: 22px;
+  font-size: 26px;
+  font-weight: 400;
   margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #13335a;
 }
 
 /* -------------------------------------
-   PAGE GRID (ALWAYS 5x5)
+   NEWSPAPER LAYOUT
+   All articles are equal size and flow
+   through continuous newspaper-style
+   text columns — no oversized lead story.
 ------------------------------------- */
-.page-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  grid-template-rows: repeat(5, auto);
-  gap: 05px;
-  padding: 10px 0;
+.newspaper {
+  text-align: left;
 }
 
-/* -------------------------------------
-   ARTICLE BOX
-------------------------------------- */
-.article-box {
-  background: #fafafa;
-  border-radius: 10px;
-  overflow: hidden;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  transition: transform 0.3s ease;
+/* Continuous 3-column newspaper flow */
+.columns {
+  column-count: 3;
+  column-gap: 40px;
 }
 
-.article-box img {
-  width: 100%;
-  height: 180px;
-  object-fit: contain;
-  background: #fff;
-  border-radius: 10px 10px 0 0;
+.col-article {
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  page-break-inside: avoid;
+  margin-bottom: 20px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #ddd;
 }
 
-.article-box h3 {
-  font-size: 16px;
-  margin: 10px;
+/* Image row scales to however many images the article has:
+   1 image = full width, 2 = side-by-side, 3 = three across, etc. */
+.col-article-images {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
 }
 
-.article-box p {
-  font-size: 13px;
-  color: #444;
-  margin: 0 10px 10px;
-  line-height: 1.4;
+.col-article-images img {
+  flex: 1 1 0;
+  width: 0; /* let flex-basis drive the width so all images stay equal */
+  aspect-ratio: 1 / 0.8;
+  object-fit: cover;
+  border-radius: 6px;
+  background: #e3e8ee;
+  color: #8a97a8;
+}
+
+.col-article h3 {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 0 0 8px;
+  color: #1a1a1a;
+}
+
+.col-article p {
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: #555;
+  margin: 0;
 }
 
 /* -------------------------------------
@@ -162,8 +181,36 @@
   margin: 0;
 }
 
-.page-bar.bottom {
-  margin-top: 20px;
+/* -------------------------------------
+   ADMIN: image preview row for
+   multi-image upload
+------------------------------------- */
+.image-preview-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.image-preview-item {
+  position: relative;
+  text-align: center;
+}
+
+.image-preview-item img {
+  display: block;
+  border-radius: 4px;
+}
+
+.image-preview-item button {
+  margin-top: 2px;
+  background: #b33;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 1px 5px;
 }
 
 /* -------------------------------------
@@ -180,13 +227,28 @@
 /* -------------------------------------
    RESPONSIVE FIXES
 ------------------------------------- */
+@media (max-width: 992px) {
+  .columns {
+    column-count: 2;
+  }
+
+  .lead-story {
+    flex-direction: column;
+  }
+
+  .lead-story-img {
+    max-width: 100%;
+    flex-basis: auto;
+  }
+}
+
 @media (max-width: 768px) {
   .title {
     font-size: 22px;
   }
 
-  .article-box img {
-    height: 150px;
+  .lead-story-body h2 {
+    font-size: 24px;
   }
 
   .viewer {
@@ -199,6 +261,10 @@
     font-size: 20px;
   }
 
+  .columns {
+    column-count: 1;
+  }
+
   .nav-link {
     font-size: 14px;
     margin: 5px;
@@ -207,9 +273,5 @@
   .nav-date {
     font-size: 14px;
     right: 10px;
-  }
-
-  .article-box img {
-    height: 130px;
   }
 }
