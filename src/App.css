@@ -130,7 +130,7 @@
   flex: 1 1 0;
   width: 0; /* let flex-basis drive the width so all images stay equal */
   aspect-ratio: 1 / 0.8;
-  object-fit: cover;
+  object-fit: contain;
   border-radius: 6px;
   background: #e3e8ee;
   color: #8a97a8;
