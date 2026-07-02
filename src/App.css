@@ -103,10 +103,14 @@
   text-align: left;
 }
 
-/* Continuous 3-column newspaper flow */
+/* Newspaper grid: fills left-to-right across a row first,
+   then wraps down to the next row (row-major order), so newest
+   articles appear reading left-to-right like a real newspaper. */
 .columns {
-  column-count: 3;
-  column-gap: 40px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px 40px;
+  align-items: start;
 }
 
 .col-article {
