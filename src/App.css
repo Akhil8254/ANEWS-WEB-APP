@@ -1,4 +1,13 @@
 /* -------------------------------------
+   GLOBAL RESET
+   (prevents padding/border from adding
+   to element width and causing overflow)
+------------------------------------- */
+* {
+  box-sizing: border-box;
+}
+
+/* -------------------------------------
    GLOBAL LAYOUT
 ------------------------------------- */
 .app {
@@ -86,126 +95,117 @@
 }
 
 .page-heading {
-  font-size: 26px;
-  font-weight: 400;
+  font-size: 22px;
   margin-bottom: 15px;
-  padding-bottom: 15px;
-  border-bottom: 2px solid #13335a;
+  text-align: center;
 }
 
 /* -------------------------------------
-   NEWSPAPER LAYOUT
-   All articles are equal size and flow
-   through continuous newspaper-style
-   text columns — no oversized lead story.
+   NEWSPAPER COLUMNS — masonry layout
+   Article placement is decided in JS by distributeMasonry(),
+   which guarantees article 1/2/3 fill left→middle→right first,
+   then adds each later article to whichever column is lightest.
+   This is just 3 plain flex columns; JS does the ordering work.
 ------------------------------------- */
-.newspaper {
-  text-align: left;
-}
-
-/* Lead story: newest article, shown bigger, full width, above the grid */
-.lead-story {
-  padding: 0 0 16px;
-  margin-bottom: 4px;
-  border-bottom: 2px solid #13335a;
-}
-
-.lead-story-images {
-  display: grid;
-  grid-template-columns: repeat(var(--img-count, 1), 1fr);
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.lead-story-images img {
-  display: block;
-  width: 100%;
-  min-width: 0;
-  height: 260px;
-  object-fit: contain;
-  border-radius: 6px;
-  background: #e3e8ee;
-}
-
-.lead-story h2 {
-  font-size: 28px;
-  font-weight: 700;
-  line-height: 1.2;
-  margin: 0 0 10px;
-  color: #1a1a1a;
-}
-
-.lead-story p {
-  font-size: 16px;
-  line-height: 1.6;
-  color: #444;
-  margin: 0;
-}
-
-/* Newspaper grid: fills left-to-right across a row first,
-   then wraps down to the next row (row-major order), so newest
-   articles appear reading left-to-right like a real newspaper. */
 .columns {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0;
-  align-items: start;
+  text-align: left;
+  border-top: 2px solid #13335a;
+  padding-top: 16px;
 }
 
+.columns.masonry-mode {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.masonry-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.columns.masonry-mode .col-article {
+  margin-bottom: 20px;
+}
+
+/* -------------------------------------
+   COLUMN ARTICLE
+------------------------------------- */
 .col-article {
-  break-inside: avoid;
-  -webkit-column-break-inside: avoid;
-  page-break-inside: avoid;
-  margin-bottom: 0;
-  padding: 14px 16px;
+  padding-bottom: 16px;
   border-bottom: 1px solid #ddd;
-  width: 100%;
-  box-sizing: border-box;
+}
+
+/* clamp text to 4 lines until "Read more" is clicked */
+.col-article p.clamped {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.col-article:nth-child(3n+2),
-.col-article:nth-child(3n+3) {
-  border-left: 1px solid #ddd;
+.read-more {
+  background: none;
+  border: none;
+  color: #13335a;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 0 0;
+  cursor: pointer;
+  text-decoration: underline;
 }
 
-/* Image row scales to however many images the article has:
-   1 image = full width, 2 = side-by-side, 3 = three across, etc.
-   Grid (not flex) is used here because flex items can miscalculate
-   and overflow their box inside a CSS multi-column (.columns) parent. */
-.col-article-images {
-  display: grid;
-  grid-template-columns: repeat(var(--img-count, 1), 1fr);
-  gap: 6px;
-  margin-bottom: 12px;
+.imgrow {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 8px;
   width: 100%;
-  box-sizing: border-box;
+  overflow: hidden; /* safety net: nothing can spill past the column edge */
 }
 
-.col-article-images img {
+.imgrow img {
+  flex: 1 1 0; /* FIXED: was "flex: 1" — 0 basis forces equal shrink to fit */
+  min-width: 0; /* FIXED: this is the actual bug fix — without it, images
+                   refuse to shrink below their natural size and overflow
+                   into the next column */
+  width: 100%;
+  max-width: 100%;
+  height: 140px;
+  object-fit: contain; /* CHANGED: was "cover" (which crops) — "contain" shows the full image, uncropped */
+  background: #f3f4f6; /* CHANGED: was #fff — blends with page background instead of showing pure white letterboxing */
+  border-radius: 8px;
   display: block;
-  width: 100%;
-  min-width: 0;
-  height: 130px;
-  object-fit: contain;
-  border-radius: 6px;
-  background: #e3e8ee;
-  color: #8a97a8;
 }
 
 .col-article h3 {
-  font-size: 17px;
-  font-weight: 700;
-  line-height: 1.25;
-  margin: 0 0 6px;
-  color: #1a1a1a;
+  font-size: 16px;
+  margin: 0 0 8px;
+  line-height: 1.3;
 }
 
 .col-article p {
-  font-size: 13.5px;
-  line-height: 1.55;
-  color: #555;
+  font-size: 13px;
+  color: #444;
   margin: 0;
+  line-height: 1.5;
+}
+
+/* -------------------------------------
+   LEAD STORY (newest article — bigger
+   heading + taller images)
+------------------------------------- */
+.col-article.lead .imgrow img {
+  height: 190px;
+}
+
+.col-article.lead h3 {
+  font-size: 22px;
+}
+
+.col-article.lead p {
+  font-size: 14px;
 }
 
 /* -------------------------------------
@@ -239,90 +239,6 @@
 }
 
 /* -------------------------------------
-   ADMIN: add-article form laid out
-   horizontally instead of stacked
-------------------------------------- */
-.add-article-form {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin: 12px 0;
-}
-
-.add-article-file {
-  flex: 0 0 auto;
-}
-
-.add-article-title {
-  flex: 1 1 160px;
-  min-width: 140px;
-  padding: 8px;
-}
-
-.add-article-text {
-  flex: 2 1 260px;
-  min-width: 200px;
-  min-height: 40px;
-  padding: 8px;
-  resize: vertical;
-}
-
-.add-article-btn {
-  flex: 0 0 auto;
-  padding: 8px 14px;
-  background: #0b2239;
-  color: #fff;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.add-article-btn:hover {
-  background: #13335a;
-}
-
-@media (max-width: 700px) {
-  .add-article-form {
-    flex-direction: column;
-    align-items: stretch;
-  }
-}
-
-/* -------------------------------------
-   ADMIN: image preview row for
-   multi-image upload
-------------------------------------- */
-.image-preview-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 10px 0;
-}
-
-.image-preview-item {
-  position: relative;
-  text-align: center;
-}
-
-.image-preview-item img {
-  display: block;
-  border-radius: 4px;
-}
-
-.image-preview-item button {
-  margin-top: 2px;
-  background: #b33;
-  color: #fff;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 11px;
-  padding: 1px 5px;
-}
-
-/* -------------------------------------
    FOOTER
 ------------------------------------- */
 .footer {
@@ -336,48 +252,21 @@
 /* -------------------------------------
    RESPONSIVE FIXES
 ------------------------------------- */
-@media (max-width: 992px) {
-  .viewer {
-    padding: 15px;
-  }
-}
-
 @media (max-width: 768px) {
   .title {
     font-size: 22px;
   }
 
+  .columns.masonry-mode {
+    flex-direction: column;
+  }
+
+  .imgrow img {
+    height: 120px;
+  }
+
   .viewer {
     padding: 15px;
-  }
-
-  .columns {
-    column-gap: 16px;
-  }
-
-  .lead-story-images img {
-    height: 170px;
-  }
-
-  .lead-story h2 {
-    font-size: 22px;
-  }
-
-  .lead-story p {
-    font-size: 14px;
-  }
-
-  .col-article-images img {
-    height: 90px;
-  }
-
-  .col-article h3 {
-    font-size: 15px;
-  }
-
-  .col-article p {
-    font-size: 11.5px;
-    line-height: 1.4;
   }
 }
 
@@ -386,34 +275,7 @@
     font-size: 20px;
   }
 
-  .columns {
-    column-gap: 10px;
-  }
-
-  .lead-story-images img {
-    height: 130px;
-  }
-
-  .lead-story h2 {
-    font-size: 18px;
-  }
-
-  .lead-story p {
-    font-size: 12.5px;
-  }
-
-  .col-article-images img {
-    height: 70px;
-  }
-
-  .col-article h3 {
-    font-size: 13px;
-  }
-
-  .col-article p {
-    font-size: 10.5px;
-    line-height: 1.35;
-  }
+  /* masonry already stacks vertically from the 768px breakpoint above */
 
   .nav-link {
     font-size: 14px;
@@ -423,5 +285,9 @@
   .nav-date {
     font-size: 14px;
     right: 10px;
+  }
+
+  .imgrow img {
+    height: 100px; /* CHANGED: was ".article-box img" (unused leftover class) */
   }
 }

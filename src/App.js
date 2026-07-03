@@ -68,8 +68,8 @@ function AdminPanel({ pages, reloadPages, onClose }) {
   const [newTitle, setNewTitle] = useState("");
   const [selectedPage, setSelectedPage] = useState("");
 
+  // CHANGED: "img" (single string) replaced with "images" (array)
   const [article, setArticle] = useState({ images: [], title: "", text: "" });
-  const [uploading, setUploading] = useState(false);
 
   const addLayout = async () => {
     if (!newTitle) return;
@@ -106,17 +106,15 @@ function AdminPanel({ pages, reloadPages, onClose }) {
       return;
     }
 
+    // CHANGED: require at least one image in the array instead of a single img
     if (!article.title || !article.text || article.images.length === 0) return;
 
-    // "img" kept in sync with the first image for backward compatibility
-    // with any code/rows that still only read the single-image column.
     const { error } = await supabase.from("articles").insert([
       {
         layout_id: Number(selectedPage),
         title: article.title,
         text: article.text,
-        img: article.images[0],
-        images: article.images,
+        images: article.images, // CHANGED: save array instead of single img
       },
     ]);
 
@@ -138,29 +136,6 @@ function AdminPanel({ pages, reloadPages, onClose }) {
     }
 
     reloadPages();
-  };
-
-  const handleImageFiles = async (e) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-
-    setUploading(true);
-    try {
-      const urls = await Promise.all(files.map(uploadImageToStorage));
-      setArticle((prev) => ({ ...prev, images: [...prev.images, ...urls] }));
-    } catch (err) {
-      alert("Image upload failed: " + err.message);
-    } finally {
-      setUploading(false);
-      e.target.value = "";
-    }
-  };
-
-  const removeImage = (index) => {
-    setArticle((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index),
-    }));
   };
 
   return (
@@ -209,48 +184,54 @@ function AdminPanel({ pages, reloadPages, onClose }) {
         ))}
       </select>
 
-      <div className="add-article-form">
-        <input
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={handleImageFiles}
-          className="add-article-file"
-        />
+      {/* CHANGED: "multiple" attribute + uploads every selected file */}
+      <input
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={async (e) => {
+          const files = Array.from(e.target.files);
+          if (!files.length) return;
+          const urls = await Promise.all(files.map((f) => uploadImageToStorage(f)));
+          setArticle({ ...article, images: [...article.images, ...urls] });
+        }}
+      />
 
-        <input
-          placeholder="Article Title"
-          value={article.title}
-          onChange={(e) => setArticle({ ...article, title: e.target.value })}
-          className="add-article-title"
-        />
-
-        <textarea
-          placeholder="Article Text"
-          value={article.text}
-          onChange={(e) => setArticle({ ...article, text: e.target.value })}
-          className="add-article-text"
-        />
-
-        <button onClick={addArticle} className="add-article-btn">
-          ➕ Add Article
-        </button>
-      </div>
-
-      {uploading && <p>Uploading…</p>}
-
+      {/* CHANGED: preview every selected image, with a remove button each */}
       {article.images.length > 0 && (
-        <div className="image-preview-row">
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "8px 0" }}>
           {article.images.map((url, i) => (
-            <div key={url + i} className="image-preview-item">
-              <img src={url} alt="" width={90} />
-              <button type="button" onClick={() => removeImage(i)}>
+            <div key={i} style={{ position: "relative" }}>
+              <img src={url} alt="" width={100} />
+              <button
+                onClick={() =>
+                  setArticle({
+                    ...article,
+                    images: article.images.filter((_, idx) => idx !== i),
+                  })
+                }
+                style={{ position: "absolute", top: 2, right: 2 }}
+              >
                 ✕
               </button>
             </div>
           ))}
         </div>
       )}
+
+      <input
+        placeholder="Article Title"
+        value={article.title}
+        onChange={(e) => setArticle({ ...article, title: e.target.value })}
+      />
+
+      <textarea
+        placeholder="Article Text"
+        value={article.text}
+        onChange={(e) => setArticle({ ...article, text: e.target.value })}
+      />
+
+      <button onClick={addArticle}>➕ Add Article</button>
 
       {pages
         .find((p) => p.id === Number(selectedPage))
@@ -264,69 +245,6 @@ function AdminPanel({ pages, reloadPages, onClose }) {
   );
 }
 
-/* ================= HELPERS ================= */
-// Old rows only ever had a single "img" column. Newer rows may have
-// an "images" array. This keeps both kinds of articles rendering.
-const getImagesToShow = (article) => {
-  if (Array.isArray(article.images) && article.images.length > 0) {
-    return article.images;
-  }
-  return article.img ? [article.img] : [];
-};
-
-/* ================= NEWSPAPER COLUMNS VIEW ================= */
-function NewspaperColumns({ articles }) {
-  const sorted = [...articles].sort(
-    (a, b) => new Date(b.created_at) - new Date(a.created_at)
-  );
-
-  if (sorted.length === 0) return null;
-
-  const [lead, ...rest] = sorted;
-  const leadImages = getImagesToShow(lead);
-
-  return (
-    <div className="newspaper">
-      <article className="lead-story">
-        {leadImages.length > 0 && (
-          <div
-            className="lead-story-images"
-            style={{ "--img-count": Math.min(leadImages.length, 3) }}
-          >
-            {leadImages.slice(0, 3).map((url, i) => (
-              <img key={url + i} src={url} alt={lead.title} />
-            ))}
-          </div>
-        )}
-        <h2>{lead.title}</h2>
-        <p>{lead.text}</p>
-      </article>
-
-      <div className="columns">
-        {rest.map((a) => {
-          const imagesToShow = getImagesToShow(a);
-          return (
-            <div key={a.id} className="col-article">
-              {imagesToShow.length > 0 && (
-                <div
-                  className="col-article-images"
-                  style={{ "--img-count": imagesToShow.length }}
-                >
-                  {imagesToShow.map((url, i) => (
-                    <img key={url + i} src={url} alt={a.title} />
-                  ))}
-                </div>
-              )}
-              <h3>{a.title}</h3>
-              <p>{a.text}</p>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 /* ================= MAIN APP ================= */
 export default function App() {
   const [pages, setPages] = useState([]);
@@ -334,9 +252,49 @@ export default function App() {
   const [showAdmin, setShowAdmin] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+  // tracks which article IDs have been expanded via "Read more"
+  const [expandedIds, setExpandedIds] = useState(new Set());
+
+  const toggleExpanded = (id) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  // Masonry distribution: places article 1 → col 0, article 2 → col 1,
+  // article 3 → col 2 (every column starts at weight 0, ties go to the
+  // next empty column left-to-right), then from article 4 onward adds
+  // each one to whichever column is currently lightest — so the first
+  // row always reads 1 → 2 → 3 across, and gaps get filled after that.
+  const distributeMasonry = (articles) => {
+    const columns = [[], [], []];
+    const weights = [0, 0, 0];
+
+    articles.forEach((a) => {
+      // rough height estimate: longer text + more images = taller card
+      const estimatedHeight =
+        (a.text?.length || 0) +
+        (a.images?.length || (a.img ? 1 : 0)) * 150;
+
+      let lightest = 0;
+      for (let i = 1; i < weights.length; i++) {
+        if (weights[i] < weights[lightest]) lightest = i;
+      }
+
+      columns[lightest].push(a);
+      weights[lightest] += estimatedHeight;
+    });
+
+    return columns;
+  };
+
   const loadPages = useCallback(async () => {
     const { data, error } = await supabase
       .from("layouts")
+      // CHANGED: fetch both "img" (old articles) and "images" (new articles)
       .select(`id, title, articles (id, title, text, img, images, created_at)`)
       .order("id", { ascending: true });
 
@@ -443,7 +401,56 @@ export default function App() {
 
               <h2 className="page-heading">{currentPage.title}</h2>
 
-              <NewspaperColumns articles={currentPage.articles || []} />
+              {(() => {
+                const sortedArticles = [...(currentPage.articles || [])].sort(
+                  (a, b) => new Date(b.created_at) - new Date(a.created_at)
+                );
+
+                const renderCard = (a, isLead) => {
+                  const imagesToShow =
+                    a.images?.length > 0 ? a.images : a.img ? [a.img] : [];
+                  const isExpanded = expandedIds.has(a.id);
+
+                  return (
+                    <div
+                      key={a.id}
+                      className={`col-article${isLead ? " lead" : ""}`}
+                    >
+                      <div className="imgrow">
+                        {imagesToShow.map((url, i) => (
+                          <img key={i} src={url} alt={a.title} />
+                        ))}
+                      </div>
+                      <h3>{a.title}</h3>
+
+                      <p className={!isExpanded ? "clamped" : ""}>{a.text}</p>
+
+                      <button
+                        className="read-more"
+                        onClick={() => toggleExpanded(a.id)}
+                      >
+                        {isExpanded ? "Show less" : "Read more"}
+                      </button>
+                    </div>
+                  );
+                };
+
+                // masonry: articles 1/2/3 fill left→middle→right on the
+                // first pass, then gap-fill from article 4 onward.
+                const columns = distributeMasonry(sortedArticles);
+
+                return (
+                  <div className="columns masonry-mode">
+                    {columns.map((col, colIndex) => (
+                      <div className="masonry-col" key={colIndex}>
+                        {col.map((a) =>
+                          renderCard(a, sortedArticles[0]?.id === a.id)
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </section>
           )
         )}
