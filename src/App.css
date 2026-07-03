@@ -103,6 +103,45 @@
   text-align: left;
 }
 
+/* Lead story: newest article, shown bigger, full width, above the grid */
+.lead-story {
+  padding: 0 0 16px;
+  margin-bottom: 4px;
+  border-bottom: 2px solid #13335a;
+}
+
+.lead-story-images {
+  display: grid;
+  grid-template-columns: repeat(var(--img-count, 1), 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.lead-story-images img {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  height: 260px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: #e3e8ee;
+}
+
+.lead-story h2 {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0 0 10px;
+  color: #1a1a1a;
+}
+
+.lead-story p {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #444;
+  margin: 0;
+}
+
 /* Newspaper grid: fills left-to-right across a row first,
    then wraps down to the next row (row-major order), so newest
    articles appear reading left-to-right like a real newspaper. */
@@ -137,7 +176,7 @@
 .col-article-images {
   display: grid;
   grid-template-columns: repeat(var(--img-count, 1), 1fr);
-  gap: 03px;
+  gap: 6px;
   margin-bottom: 12px;
   width: 100%;
   box-sizing: border-box;
@@ -316,6 +355,18 @@
     column-gap: 16px;
   }
 
+  .lead-story-images img {
+    height: 170px;
+  }
+
+  .lead-story h2 {
+    font-size: 22px;
+  }
+
+  .lead-story p {
+    font-size: 14px;
+  }
+
   .col-article-images img {
     height: 90px;
   }
@@ -337,6 +388,18 @@
 
   .columns {
     column-gap: 10px;
+  }
+
+  .lead-story-images img {
+    height: 130px;
+  }
+
+  .lead-story h2 {
+    font-size: 18px;
+  }
+
+  .lead-story p {
+    font-size: 12.5px;
   }
 
   .col-article-images img {

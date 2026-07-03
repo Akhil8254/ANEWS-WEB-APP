@@ -209,12 +209,34 @@ function AdminPanel({ pages, reloadPages, onClose }) {
         ))}
       </select>
 
-      <input
-        type="file"
-        accept="image/*"
-        multiple
-        onChange={handleImageFiles}
-      />
+      <div className="add-article-form">
+        <input
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handleImageFiles}
+          className="add-article-file"
+        />
+
+        <input
+          placeholder="Article Title"
+          value={article.title}
+          onChange={(e) => setArticle({ ...article, title: e.target.value })}
+          className="add-article-title"
+        />
+
+        <textarea
+          placeholder="Article Text"
+          value={article.text}
+          onChange={(e) => setArticle({ ...article, text: e.target.value })}
+          className="add-article-text"
+        />
+
+        <button onClick={addArticle} className="add-article-btn">
+          ➕ Add Article
+        </button>
+      </div>
+
       {uploading && <p>Uploading…</p>}
 
       {article.images.length > 0 && (
@@ -229,20 +251,6 @@ function AdminPanel({ pages, reloadPages, onClose }) {
           ))}
         </div>
       )}
-
-      <input
-        placeholder="Article Title"
-        value={article.title}
-        onChange={(e) => setArticle({ ...article, title: e.target.value })}
-      />
-
-      <textarea
-        placeholder="Article Text"
-        value={article.text}
-        onChange={(e) => setArticle({ ...article, text: e.target.value })}
-      />
-
-      <button onClick={addArticle}>➕ Add Article</button>
 
       {pages
         .find((p) => p.id === Number(selectedPage))
@@ -274,10 +282,28 @@ function NewspaperColumns({ articles }) {
 
   if (sorted.length === 0) return null;
 
+  const [lead, ...rest] = sorted;
+  const leadImages = getImagesToShow(lead);
+
   return (
     <div className="newspaper">
+      <article className="lead-story">
+        {leadImages.length > 0 && (
+          <div
+            className="lead-story-images"
+            style={{ "--img-count": Math.min(leadImages.length, 3) }}
+          >
+            {leadImages.slice(0, 3).map((url, i) => (
+              <img key={url + i} src={url} alt={lead.title} />
+            ))}
+          </div>
+        )}
+        <h2>{lead.title}</h2>
+        <p>{lead.text}</p>
+      </article>
+
       <div className="columns">
-        {sorted.map((a) => {
+        {rest.map((a) => {
           const imagesToShow = getImagesToShow(a);
           return (
             <div key={a.id} className="col-article">
