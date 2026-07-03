@@ -109,7 +109,7 @@
 .columns {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 30px 40px;
+  gap: 0;
   align-items: start;
 }
 
@@ -117,12 +117,17 @@
   break-inside: avoid;
   -webkit-column-break-inside: avoid;
   page-break-inside: avoid;
-  margin-bottom: 20px;
-  padding-bottom: 18px;
+  margin-bottom: 0;
+  padding: 14px 16px;
   border-bottom: 1px solid #ddd;
   width: 100%;
   box-sizing: border-box;
   overflow: hidden;
+}
+
+.col-article:nth-child(3n+2),
+.col-article:nth-child(3n+3) {
+  border-left: 1px solid #ddd;
 }
 
 /* Image row scales to however many images the article has:
@@ -132,7 +137,7 @@
 .col-article-images {
   display: grid;
   grid-template-columns: repeat(var(--img-count, 1), 1fr);
-  gap: 6px;
+  gap: 03px;
   margin-bottom: 12px;
   width: 100%;
   box-sizing: border-box;
@@ -150,15 +155,15 @@
 }
 
 .col-article h3 {
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 700;
   line-height: 1.25;
-  margin: 0 0 8px;
+  margin: 0 0 6px;
   color: #1a1a1a;
 }
 
 .col-article p {
-  font-size: 14.5px;
+  font-size: 13.5px;
   line-height: 1.55;
   color: #555;
   margin: 0;
@@ -192,6 +197,58 @@
   font-size: 18px;
   font-weight: bold;
   margin: 0;
+}
+
+/* -------------------------------------
+   ADMIN: add-article form laid out
+   horizontally instead of stacked
+------------------------------------- */
+.add-article-form {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+
+.add-article-file {
+  flex: 0 0 auto;
+}
+
+.add-article-title {
+  flex: 1 1 160px;
+  min-width: 140px;
+  padding: 8px;
+}
+
+.add-article-text {
+  flex: 2 1 260px;
+  min-width: 200px;
+  min-height: 40px;
+  padding: 8px;
+  resize: vertical;
+}
+
+.add-article-btn {
+  flex: 0 0 auto;
+  padding: 8px 14px;
+  background: #0b2239;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.add-article-btn:hover {
+  background: #13335a;
+}
+
+@media (max-width: 700px) {
+  .add-article-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 
 /* -------------------------------------
