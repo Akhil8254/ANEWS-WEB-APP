@@ -284,9 +284,11 @@ function AdminPanel({ pages, reloadPages, onClose }) {
 
       <button onClick={addArticle}>➕ Add Article</button>
 
-      {pages
-        .find((p) => p.id === Number(selectedPage))
-        ?.articles?.map((a) => (
+      {[
+        ...(pages.find((p) => p.id === Number(selectedPage))?.articles || []),
+      ]
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)) // CHANGED: newest article first
+        .map((a) => (
           <div key={a.id} className="delete-row">
             {a.title}
             <button onClick={() => deleteArticle(a.id)}>🗑</button>
