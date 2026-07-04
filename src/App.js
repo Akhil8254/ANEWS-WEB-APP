@@ -100,6 +100,38 @@ function AdminPanel({ pages, reloadPages, onClose }) {
     reloadPages();
   };
 
+  // NEW: rename an existing layout title
+  const [editingLayoutId, setEditingLayoutId] = useState(null);
+  const [editingTitle, setEditingTitle] = useState("");
+
+  const startEditingLayout = (p) => {
+    setEditingLayoutId(p.id);
+    setEditingTitle(p.title);
+  };
+
+  const cancelEditingLayout = () => {
+    setEditingLayoutId(null);
+    setEditingTitle("");
+  };
+
+  const saveLayoutTitle = async (id) => {
+    if (!editingTitle.trim()) return;
+
+    const { error } = await supabase
+      .from("layouts")
+      .update({ title: editingTitle.trim() })
+      .eq("id", id);
+
+    if (error) {
+      alert("Rename failed: " + error.message);
+      return;
+    }
+
+    setEditingLayoutId(null);
+    setEditingTitle("");
+    await reloadPages();
+  };
+
   const addArticle = async () => {
     if (!selectedPage) {
       alert("Please select a layout first");
@@ -164,8 +196,27 @@ function AdminPanel({ pages, reloadPages, onClose }) {
 
       {pages.map((p) => (
         <div key={p.id} className="delete-row">
-          <b>{p.title}</b>
-          <button onClick={() => deleteLayout(p.id)}>🗑</button>
+          {editingLayoutId === p.id ? (
+            <>
+              <input
+                value={editingTitle}
+                onChange={(e) => setEditingTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") saveLayoutTitle(p.id);
+                  if (e.key === "Escape") cancelEditingLayout();
+                }}
+                autoFocus
+              />
+              <button onClick={() => saveLayoutTitle(p.id)}>✅ Save</button>
+              <button onClick={cancelEditingLayout}>✖ Cancel</button>
+            </>
+          ) : (
+            <>
+              <b>{p.title}</b>
+              <button onClick={() => startEditingLayout(p)}>✏️ Rename</button>
+              <button onClick={() => deleteLayout(p.id)}>🗑</button>
+            </>
+          )}
         </div>
       ))}
 
