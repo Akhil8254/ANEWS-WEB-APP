@@ -291,3 +291,29 @@
     height: 100px; /* CHANGED: was ".article-box img" (unused leftover class) */
   }
 }
+
+/* -------------------------------------
+   Per-article share button
+   (add this to your existing App.css)
+------------------------------------- */
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.share-btn {
+  padding: 4px 10px;
+  font-size: 12.5px;
+  background: #eef2f7;
+  color: #13335a;
+  border: 1px solid #c9d3e0;
+  border-radius: 5px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.share-btn:hover {
+  background: #dce6f2;
+}

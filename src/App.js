@@ -317,6 +317,38 @@ export default function App() {
     });
   };
 
+  // Builds a link straight to one article (?article=<id>) and opens the
+  // device share sheet if available, otherwise copies the link instead.
+  const shareArticle = async (a) => {
+    const shareUrl = `${window.location.origin}${window.location.pathname}?article=${a.id}`;
+    const shareData = {
+      title: a.title,
+      text: a.text ? a.text.slice(0, 140) : a.title,
+      url: shareUrl,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        // User closed the share sheet without picking anything — ignore.
+      }
+      return;
+    }
+
+    if (navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        alert("Link copied! Paste it anywhere to share this article.");
+        return;
+      } catch (err) {
+        // fall through to the prompt fallback below
+      }
+    }
+
+    window.prompt("Copy this link to share the article:", shareUrl);
+  };
+
   // Masonry distribution: places article 1 → col 0, article 2 → col 1,
   // article 3 → col 2 (every column starts at weight 0, ties go to the
   // next empty column left-to-right), then from article 4 onward adds
@@ -396,6 +428,43 @@ export default function App() {
     }
   }, []);
 
+  // Deep link support: ?article=<id> in the URL jumps straight to that
+  // article's page and expands it, once the pages have finished loading.
+  useEffect(() => {
+    if (pages.length === 0) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const articleId = params.get("article");
+    if (!articleId) return;
+
+    const idNum = Number(articleId);
+
+    for (let i = 0; i < pages.length; i++) {
+      const found = (pages[i].articles || []).some((a) => a.id === idNum);
+      if (found) {
+        setCurrent(i);
+        setExpandedIds((prev) => new Set(prev).add(idNum));
+        break;
+      }
+    }
+  }, [pages]);
+
+  // Once the matching page is showing, scroll the shared article into view.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const articleId = params.get("article");
+    if (!articleId) return;
+
+    const timer = setTimeout(() => {
+      const el = document.getElementById(`article-${articleId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 150);
+
+    return () => clearTimeout(timer);
+  }, [current, pages]);
+
   const currentPage = pages[current];
 
   return (
@@ -467,6 +536,7 @@ export default function App() {
                   return (
                     <div
                       key={a.id}
+                      id={`article-${a.id}`}
                       className={`col-article${isLead ? " lead" : ""}`}
                     >
                       <div className="imgrow">
@@ -478,12 +548,21 @@ export default function App() {
 
                       <p className={!isExpanded ? "clamped" : ""}>{a.text}</p>
 
-                      <button
-                        className="read-more"
-                        onClick={() => toggleExpanded(a.id)}
-                      >
-                        {isExpanded ? "Show less" : "Read more"}
-                      </button>
+                      <div className="card-actions">
+                        <button
+                          className="read-more"
+                          onClick={() => toggleExpanded(a.id)}
+                        >
+                          {isExpanded ? "Show less" : "Read more"}
+                        </button>
+
+                        <button
+                          className="share-btn"
+                          onClick={() => shareArticle(a)}
+                        >
+                          🔗 Share
+                        </button>
+                      </div>
                     </div>
                   );
                 };
