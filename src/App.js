@@ -317,10 +317,13 @@ export default function App() {
     });
   };
 
-  // Builds a link straight to one article (?article=<id>) and opens the
+  // Builds a link straight to one article (/share/<id>) and opens the
   // device share sheet if available, otherwise copies the link instead.
+  // /share/<id> is a serverless function (api/share/[id].js) that returns
+  // the correct og:title/og:image for link previews, then redirects into
+  // the app at /?article=<id>.
   const shareArticle = async (a) => {
-    const shareUrl = `${window.location.origin}${window.location.pathname}?article=${a.id}`;
+    const shareUrl = `${window.location.origin}/share/${a.id}`;
     const shareData = {
       title: a.title,
       text: a.text ? a.text.slice(0, 140) : a.title,

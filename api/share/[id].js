@@ -1,0 +1,85 @@
+// api/share/[id].js
+//
+// This runs on Vercel's server, NOT in the browser. When someone shares
+// a link like https://yoursite.vercel.app/share/42, apps like WhatsApp,
+// Facebook, and Twitter fetch this URL to build the preview card. They
+// don't execute JavaScript, so React alone can never show them the right
+// photo/title — this function returns plain HTML with the correct
+// og:title / og:image tags for that one article, then redirects real
+// visitors into the actual app.
+//
+// Requires SUPABASE_URL and SUPABASE_ANON_KEY (or your existing
+// REACT_APP_-prefixed equivalents) to be set in Vercel's Environment
+// Variables — see the setup notes below.
+
+const { createClient } = require("@supabase/supabase-js");
+
+const supabase = createClient(
+  process.env.SUPABASE_URL || process.env.REACT_APP_SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY || process.env.REACT_APP_SUPABASE_ANON_KEY
+);
+
+function escapeHtml(str = "") {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+module.exports = async function handler(req, res) {
+  const { id } = req.query;
+  const siteUrl = `https://${req.headers.host}`;
+  const appUrl = `${siteUrl}/?article=${id}`;
+
+  const { data: article, error } = await supabase
+    .from("articles")
+    .select("id, title, text, images, img")
+    .eq("id", id)
+    .single();
+
+  if (error || !article) {
+    res.setHeader("Content-Type", "text/html");
+    res.status(404).send(
+      `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=${siteUrl}" /></head><body>Redirecting…</body></html>`
+    );
+    return;
+  }
+
+  const image =
+    (Array.isArray(article.images) && article.images.length > 0 && article.images[0]) ||
+    article.img ||
+    `${siteUrl}/logo512.png`;
+
+  const description = (article.text || "").slice(0, 160);
+  const title = article.title || "ANEWS E-Paper";
+
+  const html = `<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>${escapeHtml(title)} - ANEWS E-Paper</title>
+    <meta name="description" content="${escapeHtml(description)}" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="${escapeHtml(title)}" />
+    <meta property="og:description" content="${escapeHtml(description)}" />
+    <meta property="og:image" content="${image}" />
+    <meta property="og:url" content="${appUrl}" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${escapeHtml(title)}" />
+    <meta name="twitter:description" content="${escapeHtml(description)}" />
+    <meta name="twitter:image" content="${image}" />
+
+    <meta http-equiv="refresh" content="0;url=${appUrl}" />
+    <script>window.location.replace(${JSON.stringify(appUrl)});</script>
+  </head>
+  <body>
+    <p>Redirecting to the article…</p>
+  </body>
+</html>`;
+
+  res.setHeader("Content-Type", "text/html");
+  res.status(200).send(html);
+};
