@@ -51,6 +51,20 @@ module.exports = async function handler(req, res) {
     article.img ||
     `${siteUrl}/logo512.png`;
 
+  // Detect the real image type from its file extension instead of
+  // assuming JPEG — WhatsApp is strict about a mismatched og:image:type
+  // (e.g. declaring "image/jpeg" for a file that's actually a .png).
+  const extMatch = image.match(/\.(\w+)(?:\?.*)?$/);
+  const ext = extMatch ? extMatch[1].toLowerCase() : "jpg";
+  const imageMimeMap = {
+    png: "image/png",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    webp: "image/webp",
+    gif: "image/gif",
+  };
+  const imageType = imageMimeMap[ext] || "image/jpeg";
+
   const description = (article.text || "").slice(0, 160);
   const title = article.title || "ANEWS E-Paper";
 
@@ -68,7 +82,7 @@ module.exports = async function handler(req, res) {
     <meta property="og:image:secure_url" content="${image}" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:type" content="${imageType}" />
     <meta property="og:url" content="${appUrl}" />
     <meta property="og:site_name" content="ANEWS E-Paper" />
 
