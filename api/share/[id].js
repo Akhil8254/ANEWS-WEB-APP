@@ -65,7 +65,12 @@ module.exports = async function handler(req, res) {
     <meta property="og:title" content="${escapeHtml(title)}" />
     <meta property="og:description" content="${escapeHtml(description)}" />
     <meta property="og:image" content="${image}" />
+    <meta property="og:image:secure_url" content="${image}" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:url" content="${appUrl}" />
+    <meta property="og:site_name" content="ANEWS E-Paper" />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${escapeHtml(title)}" />
@@ -80,6 +85,10 @@ module.exports = async function handler(req, res) {
   </body>
 </html>`;
 
+  // Tell WhatsApp/Facebook's crawler not to cache a stale version of
+  // this HTML response itself (their own preview-image cache is separate
+  // and longer-lived, but this at least stops us adding to the problem).
+  res.setHeader("Cache-Control", "public, max-age=0, must-revalidate");
   res.setHeader("Content-Type", "text/html");
   res.status(200).send(html);
 };
