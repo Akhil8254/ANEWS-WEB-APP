@@ -317,6 +317,19 @@ export default function App() {
     });
   };
 
+  // NEW: Home button handler — jumps back to the first layout (assumed
+  // to be "TOP HEADLINES") and clears any ?article=<id> deep-link param
+  // from the URL so we don't immediately scroll back to that article.
+  const goHome = () => {
+    setCurrent(0);
+
+    const url = new URL(window.location.href);
+    if (url.searchParams.has("article")) {
+      url.searchParams.delete("article");
+      window.history.replaceState({}, "", url);
+    }
+  };
+
   // Builds a link straight to one article (/share/<id>) and opens the
   // device share sheet if available, otherwise copies the link instead.
   // /share/<id> is a serverless function (api/share/[id].js) that returns
@@ -478,7 +491,11 @@ export default function App() {
       </header>
 
       <nav className="navbar">
-        <button className="nav-link active">Home</button>
+        <button className="nav-link active" onClick={goHome}>
+          {" "}
+          Home{" "}
+        </button>
+
         <div className="nav-date">
           {new Date().toLocaleDateString("en-IN", {
             day: "2-digit",
