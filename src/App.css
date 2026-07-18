@@ -280,9 +280,39 @@
     font-size: 22px;
   }
 
+  /* Switch the navbar to a 7-column grid on mobile: 6 equal columns
+     for the buttons + 1 auto column for the date. Grid guarantees an
+     identical, predictable width per button (unlike flex-shrink, which
+     can distribute space unevenly across siblings) and reserves the
+     date's column so it can never be crowded, cut off, or overlapped. */
+  .navbar {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr) auto;
+    align-items: center;
+    padding: 8px 10px;
+    gap: 4px;
+  }
+
+  /* Unwrap .nav-links so its 6 button children become direct grid
+     items of .navbar (each landing in its own 1fr column) instead of
+     being sized as one flex child. */
+  .nav-links {
+    display: contents;
+  }
+
   .nav-link {
-    font-size: 14px;
-    padding: 5px 8px;
+    min-width: 0;
+    width: 100%;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: clamp(9px, 2.6vw, 13px); /* scales smoothly with viewport width */
+    padding: 6px 2px;
+  }
+
+  .nav-date {
+    grid-column: 7;
+    justify-self: end;
   }
 
   .columns.masonry-mode {
@@ -305,13 +335,18 @@
 
   /* masonry already stacks vertically from the 768px breakpoint above */
 
+  .navbar {
+    padding: 6px 8px;
+    gap: 2px;
+  }
+
   .nav-link {
-    font-size: 13px;
-    padding: 4px 8px;
+    font-size: clamp(8px, 2.4vw, 11px);
+    padding: 5px 1px;
   }
 
   .nav-date {
-    font-size: 13px;
+    font-size: 11px;
   }
 
   .imgrow img {
