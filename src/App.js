@@ -521,16 +521,16 @@ export default function App() {
 
           <button
             className="nav-link"
-            onClick={() => navigateToPage("National News")}
+            onClick={() => navigateToPage("National")}
           >
-            National News
+            National
           </button>
 
           <button
             className="nav-link"
-            onClick={() => navigateToPage("International News")}
+            onClick={() => navigateToPage("World")}
           >
-            International News
+            World
           </button>
 
           <button
