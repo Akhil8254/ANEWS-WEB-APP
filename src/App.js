@@ -317,11 +317,24 @@ export default function App() {
     });
   };
 
-  // NEW: Home button handler — jumps back to the first layout (assumed
-  // to be "TOP HEADLINES") and clears any ?article=<id> deep-link param
-  // from the URL so we don't immediately scroll back to that article.
-  const goHome = () => {
-    setCurrent(0);
+  // NEW: generic nav handler — jumps to whichever layout's title matches
+  // (case/whitespace-insensitive), and clears any ?article=<id> deep-link
+  // param so we don't immediately scroll back to a shared article.
+  // Used by Home and every section button (Telangana, Sports, etc).
+  const navigateToPage = (title) => {
+    const idx = pages.findIndex(
+      (p) => p.title.trim().toLowerCase() === title.trim().toLowerCase()
+    );
+
+    if (idx === -1) {
+      // layout doesn't exist yet in Supabase under this exact name
+      alert(
+        `No "${title}" layout found yet. Create a layout named exactly "${title}" in the admin panel first.`
+      );
+      return;
+    }
+
+    setCurrent(idx);
 
     const url = new URL(window.location.href);
     if (url.searchParams.has("article")) {
@@ -491,10 +504,49 @@ export default function App() {
       </header>
 
       <nav className="navbar">
-        <button className="nav-link active" onClick={goHome}>
-          {" "}
-          Home{" "}
-        </button>
+        <div className="nav-links">
+          <button
+            className="nav-link"
+            onClick={() => navigateToPage("TOP HEADLINES")}
+          >
+            Home
+          </button>
+
+          <button
+            className="nav-link"
+            onClick={() => navigateToPage("Telangana")}
+          >
+            Telangana
+          </button>
+
+          <button
+            className="nav-link"
+            onClick={() => navigateToPage("National News")}
+          >
+            National News
+          </button>
+
+          <button
+            className="nav-link"
+            onClick={() => navigateToPage("International News")}
+          >
+            International News
+          </button>
+
+          <button
+            className="nav-link"
+            onClick={() => navigateToPage("Sports")}
+          >
+            Sports
+          </button>
+
+          <button
+            className="nav-link"
+            onClick={() => navigateToPage("Films")}
+          >
+            Films
+          </button>
+        </div>
 
         <div className="nav-date">
           {new Date().toLocaleDateString("en-IN", {

@@ -40,35 +40,54 @@
 }
 
 /* -------------------------------------
-   NAVBAR (CENTER ITEMS + DATE RIGHT)
+   NAVBAR
+   CHANGED: was "justify-content: center"
+   with "position: relative" + the date
+   pinned via "position: absolute" — that
+   only worked with a single centered Home
+   button. Now there are 6 nav buttons on
+   the left and the date on the right, so
+   this uses "space-between" with a normal
+   flex-flow date instead of absolute
+   positioning.
 ------------------------------------- */
 .navbar {
   background: #13335a;
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
   padding: 10px 20px;
-  position: relative;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* NEW: wraps all the nav buttons together so they can wrap as a group
+   on small screens without fighting the date for space */
+.nav-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
 .nav-link {
   background: none;
   border: none;
   color: #fdfdfd;
-  margin: 6px 14px;
+  padding: 6px 12px;
   font-size: 16px;
   cursor: pointer;
   transition: 0.2s;
+  border-radius: 6px;
+  white-space: nowrap;
 }
 
 .nav-link:hover {
   text-decoration: underline;
 }
 
-/* Right-side Date */
+/* Date — no longer absolutely positioned, just sits at the
+   end of the flex row (space-between handles the right alignment) */
 .nav-date {
-  position: absolute;
-  right: 20px;
   color: #fff;
   font-size: 16px;
   font-weight: 500;
@@ -257,6 +276,15 @@
     font-size: 22px;
   }
 
+  .navbar {
+    justify-content: center; /* NEW: centers the wrapped nav row on tablets */
+  }
+
+  .nav-link {
+    font-size: 14px; /* CHANGED: was 16px, tightened for more buttons to fit */
+    padding: 5px 8px;
+  }
+
   .columns.masonry-mode {
     flex-direction: column;
   }
@@ -278,23 +306,21 @@
   /* masonry already stacks vertically from the 768px breakpoint above */
 
   .nav-link {
-    font-size: 14px;
-    margin: 5px;
+    font-size: 12px; /* CHANGED: was 14px, tightened further for phones */
+    padding: 4px 6px;
   }
 
   .nav-date {
-    font-size: 14px;
-    right: 10px;
+    font-size: 14px; /* CHANGED: removed "right: 10px" — no longer absolutely positioned */
   }
 
   .imgrow img {
-    height: 100px; /* CHANGED: was ".article-box img" (unused leftover class) */
+    height: 100px;
   }
 }
 
 /* -------------------------------------
    Per-article share button
-   (add this to your existing App.css)
 ------------------------------------- */
 .card-actions {
   display: flex;
