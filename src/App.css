@@ -41,57 +41,61 @@
 
 /* -------------------------------------
    NAVBAR
-   CHANGED: was "justify-content: center"
-   with "position: relative" + the date
-   pinned via "position: absolute" — that
-   only worked with a single centered Home
-   button. Now there are 6 nav buttons on
-   the left and the date on the right, so
-   this uses "space-between" with a normal
-   flex-flow date instead of absolute
-   positioning.
+   Nav buttons scroll horizontally on one line
+   instead of wrapping, so the date stays visible
+   and fixed on the right at every screen width.
 ------------------------------------- */
 .navbar {
   background: #13335a;
   display: flex;
-  justify-content: space-between;
   align-items: center;
   padding: 10px 20px;
-  flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
 }
 
-/* NEW: wraps all the nav buttons together so they can wrap as a group
-   on small screens without fighting the date for space */
+/* Scrolls sideways instead of wrapping — this is what lets 6 buttons
+   share space with the date without ever breaking to a second line.
+   flex: 1 + min-width: 0 lets this shrink as needed so .nav-date
+   always keeps its full width and never gets squeezed out. */
 .nav-links {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 4px;
+  overflow-x: auto;
+  flex: 1;
+  min-width: 0;
+  -webkit-overflow-scrolling: touch; /* smooth momentum scroll on iOS */
+  scrollbar-width: none; /* Firefox: hide the scrollbar itself */
+}
+
+.nav-links::-webkit-scrollbar {
+  display: none; /* Chrome/Safari: hide the scrollbar itself */
 }
 
 .nav-link {
   background: none;
   border: none;
   color: #fdfdfd;
-  padding: 6px 12px;
-  font-size: 16px;
+  padding: 6px 10px;
+  font-size: 15px;
   cursor: pointer;
   transition: 0.2s;
   border-radius: 6px;
   white-space: nowrap;
+  flex-shrink: 0; /* keeps each button's text from getting squished */
 }
 
 .nav-link:hover {
   text-decoration: underline;
 }
 
-/* Date — no longer absolutely positioned, just sits at the
-   end of the flex row (space-between handles the right alignment) */
+/* Date — fixed width, never shrinks or scrolls away */
 .nav-date {
   color: #fff;
   font-size: 16px;
   font-weight: 500;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* -------------------------------------
@@ -276,12 +280,8 @@
     font-size: 22px;
   }
 
-  .navbar {
-    justify-content: center; /* NEW: centers the wrapped nav row on tablets */
-  }
-
   .nav-link {
-    font-size: 14px; /* CHANGED: was 16px, tightened for more buttons to fit */
+    font-size: 14px;
     padding: 5px 8px;
   }
 
@@ -306,12 +306,12 @@
   /* masonry already stacks vertically from the 768px breakpoint above */
 
   .nav-link {
-    font-size: 12px; /* CHANGED: was 14px, tightened further for phones */
-    padding: 4px 6px;
+    font-size: 13px;
+    padding: 4px 8px;
   }
 
   .nav-date {
-    font-size: 14px; /* CHANGED: removed "right: 10px" — no longer absolutely positioned */
+    font-size: 13px;
   }
 
   .imgrow img {
